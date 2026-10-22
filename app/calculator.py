@@ -37,7 +37,7 @@ def build_help_menu() -> str:
     lines = [f"{Fore.CYAN}Available commands:{Style.RESET_ALL}"]
     for op in OperationFactory.available_operations():
         lines.append(f"  {Fore.GREEN}{op}{Style.RESET_ALL} - perform {op} on two numbers")
-    for command, description in _help_registry:
+    for command, description in reversed(_help_registry):
         lines.append(f"  {Fore.GREEN}{command}{Style.RESET_ALL} - {description}")
     return "\n".join(lines)
 
