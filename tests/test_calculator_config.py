@@ -38,3 +38,24 @@ def test_invalid_max_input(monkeypatch):
     monkeypatch.setenv("CALCULATOR_MAX_INPUT_VALUE", "0")
     with pytest.raises(ConfigurationError):
         CalculatorConfig()
+
+
+
+def test_file_paths_from_env(monkeypatch, tmp_path):
+    log_file = str(tmp_path / "custom.log")
+    history_file = str(tmp_path / "custom.csv")
+    monkeypatch.setenv("CALCULATOR_LOG_FILE", log_file)
+    monkeypatch.setenv("CALCULATOR_HISTORY_FILE", history_file)
+    config = CalculatorConfig()
+    assert config.log_file == log_file
+    assert config.history_file == history_file
+
+
+def test_file_paths_default_to_dirs(monkeypatch):
+    monkeypatch.delenv("CALCULATOR_LOG_FILE", raising=False)
+    monkeypatch.delenv("CALCULATOR_HISTORY_FILE", raising=False)
+    monkeypatch.setenv("CALCULATOR_LOG_DIR", "mylogs")
+    monkeypatch.setenv("CALCULATOR_HISTORY_DIR", "myhistory")
+    config = CalculatorConfig()
+    assert config.log_file.startswith("mylogs")
+    assert config.history_file.startswith("myhistory")

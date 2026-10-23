@@ -53,7 +53,9 @@ class HistoryManager:
         self.encoding = encoding
         self._history = []
         self._observers = []
-        os.makedirs(os.path.dirname(history_file), exist_ok=True)
+        history_dir = os.path.dirname(history_file)
+        if history_dir:
+            os.makedirs(history_dir, exist_ok=True)
 
     def add_observer(self, observer: HistoryObserver) -> None:
         self._observers.append(observer)
@@ -98,6 +100,8 @@ class HistoryManager:
         except (pd.errors.EmptyDataError, pd.errors.ParserError) as e:
             raise OperationError(f"History file is malformed: {e}")
 
-        self._history = []
-        for _, row in df.iterrows():
-            self._history.append(Calculation.from_dict(row.to_dict()))
+        try:
+            loaded = [Calculation.from_dict(row.to_dict()) for _, row in df.iterrows()]
+        except (KeyError, ValueError, TypeError, OperationError) as e:
+            raise OperationError(f"History file is malformed: {e}")
+        self._history = loaded

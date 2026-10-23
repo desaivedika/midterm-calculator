@@ -113,3 +113,63 @@ def test_repl_commands(monkeypatch, capsys, repl_env, inputs, expected):
     feed(monkeypatch, inputs)
     calculator_repl()
     assert expected in capsys.readouterr().out
+
+
+
+# ---------- Precision, observers, and logging levels ----------
+
+def read_log(config):
+    with open(config.log_file, encoding="utf-8") as f:
+        return f.read()
+
+
+def test_precision_rounds_results(config):
+    config.precision = 2
+    assert Calculator(config).perform_operation("divide", "1", "3") == 0.33
+
+
+def test_add_observer_registers_with_calculator(config):
+    class Spy:
+        def __init__(self):
+            self.seen = []
+
+        def update(self, calculation):
+            self.seen.append(calculation)
+
+    calc = Calculator(config)
+    spy = Spy()
+    calc.add_observer(spy)
+    calc.perform_operation("add", "1", "2")
+    assert len(spy.seen) == 1
+
+
+def test_error_is_logged(config):
+    calc = Calculator(config)
+    with pytest.raises(Exception):
+        calc.perform_operation("divide", "5", "0")
+    assert "ERROR" in read_log(config)
+
+
+def test_warning_is_logged(config):
+    calc = Calculator(config)
+    calc.undo()
+    assert "WARNING" in read_log(config)
+
+
+def test_load_failure_is_logged(config):
+    calc = Calculator(config)
+    with pytest.raises(Exception):
+        calc.load()
+    assert "Loading history failed" in read_log(config)
+
+
+def test_invalid_command_logs_warning(monkeypatch, repl_env, tmp_path):
+    feed(monkeypatch, ["banana", "exit"])
+    calculator_repl()
+    with open(tmp_path / "logs" / "calculator.log", encoding="utf-8") as f:
+        assert "Invalid command entered: banana" in f.read()
+
+
+def test_help_menu_order():
+    menu = build_help_menu()
+    assert menu.index("history") < menu.index("exit")

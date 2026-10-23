@@ -19,8 +19,13 @@ class CalculatorConfig:
         self.precision = int(os.getenv("CALCULATOR_PRECISION", "10"))
         self.max_input_value = float(os.getenv("CALCULATOR_MAX_INPUT_VALUE", "1e15"))
         self.default_encoding = os.getenv("CALCULATOR_DEFAULT_ENCODING", "utf-8")
-        self.history_file = os.path.join(self.history_dir, "calculator_history.csv")
-        self.log_file = os.path.join(self.log_dir, "calculator.log")
+        self.log_file = os.getenv(
+            "CALCULATOR_LOG_FILE", os.path.join(self.log_dir, "calculator.log")
+        )
+        self.history_file = os.getenv(
+            "CALCULATOR_HISTORY_FILE",
+            os.path.join(self.history_dir, "calculator_history.csv"),
+        )
         self.validate()
 
     def validate(self):

@@ -79,3 +79,22 @@ def test_to_dataframe(tmp_path):
     df = m.to_dataframe()
     assert list(df.columns) == HistoryManager.COLUMNS
     assert len(df) == 1
+
+
+
+def test_load_wrong_columns(tmp_path):
+    bad = tmp_path / "wrong.csv"
+    bad.write_text("name,value\nfoo,1\n", encoding="utf-8")
+    m = HistoryManager(str(bad))
+    m.add_calculation(Calculation("add", 1, 1))
+    with pytest.raises(OperationError, match="malformed"):
+        m.load()
+    assert len(m.get_history()) == 1  # existing history kept after a failed load
+
+
+def test_history_file_without_folder(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    m = HistoryManager("plain.csv")
+    m.add_calculation(Calculation("add", 1, 1))
+    m.save()
+    assert os.path.exists(tmp_path / "plain.csv")

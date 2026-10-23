@@ -37,6 +37,7 @@ def build_help_menu() -> str:
     lines = [f"{Fore.CYAN}Available commands:{Style.RESET_ALL}"]
     for op in OperationFactory.available_operations():
         lines.append(f"  {Fore.GREEN}{op}{Style.RESET_ALL} - perform {op} on two numbers")
+    # Decorators register bottom-up, so reverse to show them in written order
     for command, description in reversed(_help_registry):
         lines.append(f"  {Fore.GREEN}{command}{Style.RESET_ALL} - {description}")
     return "\n".join(lines)
@@ -69,43 +70,68 @@ class Calculator:
         self.caretaker = Caretaker()
         self.validator = InputValidator()
 
-        self.history_manager.add_observer(LoggingObserver(self.logger))
+        self.add_observer(LoggingObserver(self.logger))
         if self.config.auto_save:
-            self.history_manager.add_observer(AutoSaveObserver(self.history_manager))
+            self.add_observer(AutoSaveObserver(self.history_manager))
+        self.logger.info("Calculator initialized")
+
+    def add_observer(self, observer) -> None:
+        """Register an observer with the calculator."""
+        self.history_manager.add_observer(observer)
 
     def perform_operation(self, operation_name: str, a, b) -> float:
         """Validate inputs, run the operation, record it, return the result."""
-        num_a = self.validator.validate_number(a, self.config.max_input_value)
-        num_b = self.validator.validate_number(b, self.config.max_input_value)
+        try:
+            num_a = self.validator.validate_number(a, self.config.max_input_value)
+            num_b = self.validator.validate_number(b, self.config.max_input_value)
+            calculation = Calculation(operation_name, num_a, num_b)
+        except CalculatorError as e:
+            self.logger.error(f"{operation_name} failed with inputs ({a}, {b}): {e}")
+            raise
+
+        calculation.result = round(calculation.result, self.config.precision)
         self.caretaker.save_state(self.history_manager.get_history())
-        calculation = Calculation(operation_name, num_a, num_b)
         self.history_manager.add_calculation(calculation)
-        self.logger.info(f"Performed {operation_name}({num_a}, {num_b})")
         return calculation.result
 
     def undo(self) -> bool:
         state = self.caretaker.undo(self.history_manager.get_history())
         if state is None:
+            self.logger.warning("Undo requested but there is nothing to undo")
             return False
         self.history_manager._history = state
+        self.logger.info("Undo performed")
         return True
 
     def redo(self) -> bool:
         state = self.caretaker.redo(self.history_manager.get_history())
         if state is None:
+            self.logger.warning("Redo requested but there is nothing to redo")
             return False
         self.history_manager._history = state
+        self.logger.info("Redo performed")
         return True
 
     def clear(self) -> None:
         self.caretaker.save_state(self.history_manager.get_history())
         self.history_manager.clear()
+        self.logger.info("History cleared")
 
     def save(self) -> None:
-        self.history_manager.save()
+        try:
+            self.history_manager.save()
+        except CalculatorError as e:  # pragma: no cover
+            self.logger.error(f"Saving history failed: {e}")
+            raise
+        self.logger.info(f"History saved to {self.config.history_file}")
 
     def load(self) -> None:
-        self.history_manager.load()
+        try:
+            self.history_manager.load()
+        except CalculatorError as e:
+            self.logger.error(f"Loading history failed: {e}")
+            raise
+        self.logger.info(f"History loaded from {self.config.history_file}")
 
 
 def calculator_repl():
@@ -118,6 +144,7 @@ def calculator_repl():
         command = input(f"{Fore.YELLOW}>>> {Style.RESET_ALL}").strip().lower()
 
         if command == "exit":
+            calculator.logger.info("Application exited")
             print(f"{Fore.CYAN}Goodbye!{Style.RESET_ALL}")
             break
 
@@ -166,6 +193,7 @@ def calculator_repl():
 
         # LBYL: check the command is a known operation before proceeding
         if command not in OperationFactory.available_operations():
+            calculator.logger.warning(f"Invalid command entered: {command}")
             print(f"{Fore.RED}Invalid command. Type 'help' for options.{Style.RESET_ALL}")
             continue
 

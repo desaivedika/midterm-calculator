@@ -9,6 +9,7 @@ A modular command-line calculator built in Python. It supports ten arithmetic op
 - Undo and redo of calculations
 - History saved to and loaded from CSV using pandas
 - Logging of calculations, warnings and errors to a log file
+- Results rounded to a configurable number of decimal places
 - Configuration through a `.env` file, with default values
 - Custom exceptions and input validation, so bad input never crashes the app
 - Color-coded output (optional feature)
@@ -18,7 +19,7 @@ A modular command-line calculator built in Python. It supports ten arithmetic op
 
 - **Factory**: `OperationFactory` creates the right operation object from its name.
 - **Memento**: `Memento` and `Caretaker` save snapshots of the history for undo and redo.
-- **Observer**: `LoggingObserver` logs each calculation and `AutoSaveObserver` saves the history to CSV after each calculation.
+- **Observer**: `LoggingObserver` logs each calculation and `AutoSaveObserver` saves the history to CSV after each calculation. Observers are registered with the `Calculator` through `add_observer()`.
 - **Facade**: the `Calculator` class gives one simple interface to all the parts above.
 - **Decorator** (optional feature): `@help_entry` registers commands, and the help menu also lists every operation from the factory, so adding a new operation updates the menu automatically.
 
@@ -62,19 +63,30 @@ CALCULATOR_DEFAULT_ENCODING=utf-8
 | CALCULATOR_HISTORY_DIR | Folder for the history CSV | history |
 | CALCULATOR_MAX_HISTORY_SIZE | Maximum number of history entries kept | 100 |
 | CALCULATOR_AUTO_SAVE | Save history after every calculation (true/false) | true |
-| CALCULATOR_PRECISION | Decimal places for calculations | 10 |
+| CALCULATOR_PRECISION | Decimal places results are rounded to | 10 |
 | CALCULATOR_MAX_INPUT_VALUE | Largest number allowed as input | 1e15 |
 | CALCULATOR_DEFAULT_ENCODING | Encoding for file operations | utf-8 |
+| CALCULATOR_LOG_FILE | Full path of the log file (optional) | logs/calculator.log |
+| CALCULATOR_HISTORY_FILE | Full path of the history CSV (optional) | history/calculator_history.csv |
 
 The configuration is checked when the app starts, and invalid values raise a `ConfigurationError`.
 
 ### Logging
 
-Logs are written to `<CALCULATOR_LOG_DIR>/calculator.log` using Python's `logging` module, with INFO, WARNING and ERROR levels. Each calculation is logged with its operation, operands and result.
+Logs are written to the file set by `CALCULATOR_LOG_FILE` (default `<CALCULATOR_LOG_DIR>/calculator.log`) using Python's `logging` module. INFO records each calculation and actions such as undo, save and load. WARNING records invalid commands and undo/redo requests with nothing to undo or redo. ERROR records failed calculations and failed history loads.
+
+Example log output:
+~~~
+2026-10-22 17:11:38 - INFO - Calculator initialized
+2026-10-22 17:11:38 - INFO - Calculation: divide(1.0, 3.0) = 0.3333333333
+2026-10-22 17:11:39 - WARNING - Invalid command entered: banana
+2026-10-22 17:11:39 - WARNING - Undo requested but there is nothing to undo
+2026-10-22 17:11:40 - ERROR - divide failed with inputs (5, 0): Cannot divide by zero
+~~~
 
 ### History file
 
-History is saved to `<CALCULATOR_HISTORY_DIR>/calculator_history.csv` with the columns operation, operand1, operand2, result and timestamp. A missing or malformed file produces a clear error message instead of a crash.
+History is saved to the file set by `CALCULATOR_HISTORY_FILE` (default `<CALCULATOR_HISTORY_DIR>/calculator_history.csv`) with the columns operation, operand1, operand2, result and timestamp. A missing file, an empty file, or a file with the wrong columns produces a clear error message instead of a crash, and the current history is kept.
 
 ## Usage
 
@@ -125,7 +137,7 @@ Check the 90% coverage threshold, as the CI pipeline does:
 python -m pytest --cov=app --cov-fail-under=90
 ~~~
 
-The tests use parameterized cases and cover edge cases such as division by zero, negative exponents, roots of negative numbers, invalid input, invalid configuration, and missing or malformed history files.
+The tests use parameterized cases and cover edge cases such as division by zero, negative exponents, roots of negative numbers, invalid input, invalid configuration, precision rounding, logging levels, and missing or malformed history files.
 
 ## CI/CD
 
