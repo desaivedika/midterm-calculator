@@ -29,7 +29,9 @@ class Calculation:
     @staticmethod
     def from_dict(data: dict) -> "Calculation":
         """Recreate a Calculation from a stored dictionary/row."""
-        return Calculation(data["operation"], float(data["operand1"]), float(data["operand2"]))
-
+        calc = Calculation(data["operation"], float(data["operand1"]), float(data["operand2"]))
+        if data.get("timestamp"):
+            calc.timestamp = datetime.fromisoformat(str(data["timestamp"]))
+        return calc
     def __str__(self) -> str:
         return f"{self.operation_name}({self.a}, {self.b}) = {self.result}"

@@ -31,3 +31,10 @@ def test_from_dict():
 
 def test_str():
     assert str(Calculation("add", 1, 2)) == "add(1, 2) = 3"
+
+
+
+def test_from_dict_keeps_timestamp():
+    data = {"operation": "add", "operand1": "1", "operand2": "2",
+            "result": 3, "timestamp": "2024-05-01T10:30:00"}
+    assert Calculation.from_dict(data).timestamp.isoformat() == "2024-05-01T10:30:00"

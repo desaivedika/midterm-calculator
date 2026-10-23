@@ -12,7 +12,7 @@ A modular command-line calculator built in Python. It supports ten arithmetic op
 - Results rounded to a configurable number of decimal places
 - Configuration through a `.env` file, with default values
 - Custom exceptions and input validation, so bad input never crashes the app
-- Color-coded output (optional feature)
+- Color-coded output using colorama: green for results, red for errors, yellow for the prompt (optional feature)
 - Help menu generated automatically with the Decorator pattern (optional feature)
 - Every request runs as a command object, and commands can be queued and run as a batch, using the Command pattern (optional feature)
 
