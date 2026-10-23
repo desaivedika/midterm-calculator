@@ -1,8 +1,9 @@
 """Calculator facade and REPL interface.
 
 Implements the Facade pattern (Calculator wraps all subsystems) and,
-as optional features, a Decorator-pattern dynamic help menu and
-color-coded output via colorama.
+as optional features, a Decorator-pattern dynamic help menu,
+color-coded output via colorama, and the Command pattern (every
+REPL request is run as a command object through a CommandInvoker).
 """
 
 from colorama import Fore, Style, init as colorama_init
@@ -10,6 +11,10 @@ from colorama import Fore, Style, init as colorama_init
 from app.calculation import Calculation
 from app.calculator_config import CalculatorConfig
 from app.calculator_memento import Caretaker
+from app.commands import (
+    CommandInvoker, CalculateCommand, UndoCommand, RedoCommand,
+    ClearCommand, SaveCommand, LoadCommand,
+)
 from app.exceptions import CalculatorError
 from app.history import HistoryManager, LoggingObserver, AutoSaveObserver
 from app.input_validators import InputValidator
@@ -137,6 +142,7 @@ class Calculator:
 def calculator_repl():
     """Run the Read-Eval-Print Loop."""
     calculator = Calculator()
+    invoker = CommandInvoker()
     print(f"{Fore.CYAN}Welcome to the Enhanced Calculator!{Style.RESET_ALL}")
     print(build_help_menu())
 
@@ -161,23 +167,23 @@ def calculator_repl():
             continue
 
         if command == "clear":
-            calculator.clear()
+            invoker.execute(ClearCommand(calculator))
             print(f"{Fore.GREEN}History cleared.{Style.RESET_ALL}")
             continue
 
         if command == "undo":
-            print(f"{Fore.GREEN}Undo successful." if calculator.undo()
+            print(f"{Fore.GREEN}Undo successful." if invoker.execute(UndoCommand(calculator))
                   else f"{Fore.RED}Nothing to undo.")
             continue
 
         if command == "redo":
-            print(f"{Fore.GREEN}Redo successful." if calculator.redo()
+            print(f"{Fore.GREEN}Redo successful." if invoker.execute(RedoCommand(calculator))
                   else f"{Fore.RED}Nothing to redo.")
             continue
 
         if command == "save":
             try:
-                calculator.save()
+                invoker.execute(SaveCommand(calculator))
                 print(f"{Fore.GREEN}History saved.{Style.RESET_ALL}")
             except CalculatorError as e:  # pragma: no cover
                 print(f"{Fore.RED}Error: {e}{Style.RESET_ALL}")
@@ -185,7 +191,7 @@ def calculator_repl():
 
         if command == "load":
             try:
-                calculator.load()
+                invoker.execute(LoadCommand(calculator))
                 print(f"{Fore.GREEN}History loaded.{Style.RESET_ALL}")
             except CalculatorError as e:
                 print(f"{Fore.RED}Error: {e}{Style.RESET_ALL}")
@@ -201,7 +207,7 @@ def calculator_repl():
         try:
             a = input("Enter first number: ")
             b = input("Enter second number: ")
-            result = calculator.perform_operation(command, a, b)
+            result = invoker.execute(CalculateCommand(calculator, command, a, b))
             print(f"{Fore.GREEN}Result: {result}{Style.RESET_ALL}")
         except CalculatorError as e:
             print(f"{Fore.RED}Error: {e}{Style.RESET_ALL}")

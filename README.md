@@ -14,6 +14,7 @@ A modular command-line calculator built in Python. It supports ten arithmetic op
 - Custom exceptions and input validation, so bad input never crashes the app
 - Color-coded output (optional feature)
 - Help menu generated automatically with the Decorator pattern (optional feature)
+- Every request runs as a command object, and commands can be queued and run as a batch, using the Command pattern (optional feature)
 
 ## Design Patterns
 
@@ -22,6 +23,7 @@ A modular command-line calculator built in Python. It supports ten arithmetic op
 - **Observer**: `LoggingObserver` logs each calculation and `AutoSaveObserver` saves the history to CSV after each calculation. Observers are registered with the `Calculator` through `add_observer()`.
 - **Facade**: the `Calculator` class gives one simple interface to all the parts above.
 - **Decorator** (optional feature): `@help_entry` registers commands, and the help menu also lists every operation from the factory, so adding a new operation updates the menu automatically.
+ - **Command** (optional feature): `app/commands.py` wraps each request (calculations, undo, redo, clear, save, load) in a command object. The REPL runs every request through a `CommandInvoker`, which records executed commands and can queue commands with `add_to_queue()` and run them later with `run_queue()`.
 
 ## Installation
 
@@ -158,6 +160,7 @@ midterm-calculator/
 │   ├── input_validators.py     # Input validation
 │   ├── logger.py               # Logging setup
 │   └── operations.py           # Operations and Factory pattern
+│   ├── commands.py             # Command pattern and invoker
 ├── tests/
 │   ├── __init__.py
 │   ├── test_calculation.py
@@ -169,6 +172,7 @@ midterm-calculator/
 │   ├── test_input_validators.py
 │   ├── test_logger.py
 │   └── test_operations.py
+│   ├── test_commands.py
 ├── .env
 ├── main.py
 ├── pytest.ini
