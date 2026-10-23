@@ -17,21 +17,29 @@ class Operation(ABC):
 
 
 class Addition(Operation):
+    """Returns a + b."""
+
     def execute(self, a: float, b: float) -> float:
         return a + b
 
 
 class Subtraction(Operation):
+    """Returns a - b."""
+
     def execute(self, a: float, b: float) -> float:
         return a - b
 
 
 class Multiplication(Operation):
+    """Returns a * b."""
+
     def execute(self, a: float, b: float) -> float:
         return a * b
 
 
 class Division(Operation):
+    """Returns a / b. Raises OperationError if b is zero."""
+
     def execute(self, a: float, b: float) -> float:
         if b == 0:
             raise OperationError("Cannot divide by zero")
@@ -39,11 +47,15 @@ class Division(Operation):
 
 
 class Power(Operation):
+    """Returns a raised to the power of b (negative exponents allowed)."""
+
     def execute(self, a: float, b: float) -> float:
         return a ** b
 
 
 class Root(Operation):
+    """Returns the b-th root of a. Rejects b == 0 and negative a."""
+
     def execute(self, a: float, b: float) -> float:
         if b == 0:
             raise OperationError("Cannot take the zeroth root")
@@ -53,6 +65,8 @@ class Root(Operation):
 
 
 class Modulus(Operation):
+    """Returns the remainder of a / b. Raises OperationError if b is zero."""
+
     def execute(self, a: float, b: float) -> float:
         if b == 0:
             raise OperationError("Cannot take modulus with zero divisor")
@@ -60,6 +74,8 @@ class Modulus(Operation):
 
 
 class IntegerDivision(Operation):
+    """Returns a // b, discarding the fractional part. Rejects b == 0."""
+
     def execute(self, a: float, b: float) -> float:
         if b == 0:
             raise OperationError("Cannot divide by zero")
@@ -67,6 +83,8 @@ class IntegerDivision(Operation):
 
 
 class Percentage(Operation):
+    """Returns (a / b) * 100. Raises OperationError if b is zero."""
+
     def execute(self, a: float, b: float) -> float:
         if b == 0:
             raise OperationError("Cannot compute percentage with zero divisor")
@@ -74,6 +92,8 @@ class Percentage(Operation):
 
 
 class AbsoluteDifference(Operation):
+    """Returns the absolute difference |a - b|."""
+
     def execute(self, a: float, b: float) -> float:
         return abs(a - b)
 
